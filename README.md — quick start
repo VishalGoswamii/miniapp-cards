@@ -1,35 +1,16 @@
-# Mini App: Daily Card Vending
+# Mini App: Daily Card Vending (Base Sepolia first)
 
 
-## Prereqs
-- Node 18+
-- pnpm or npm
-- Wallet funded on **Base mainnet** for prod (use **Base Sepolia** for testing)
-
-
-## Install
-pnpm i
-cd web && pnpm i
-
-
-## Deploy contracts (choose network)
-# Testnet
-# pnpm hardhat run scripts/deploy.ts --network baseSepolia
-# Mainnet
-# pnpm hardhat run scripts/deploy.ts --network base
-
-
-## Configure VRF (Base mainnet)
-- Create a VRF **subscription** on Base, note the sub ID
-- Fund the subscription with **LINK on Base** (token address in `.env`)
-- Set `VRF_COORDINATOR`, `VRF_KEYHASH` (30 gwei lane recommended), and `VRF_SUBSCRIPTION_ID`
-- Add your **VendingMachine** contract as a consumer for the subscription
-
-
-## Run web
-cd web && pnpm dev
-
-
-## Notes
-- Base Mainnet chainId: **8453**; explorer: basescan.org
-- Update `NEXT_PUBLIC_*` with deployed addresses.
+## Testnet (Base Sepolia) quick deploy — Remix (no private keys in files)
+1. Open Remix → create `contracts/` and paste `CardCollection.sol`, `VendingMachine.sol` (**TEST** version), `TradingEscrow.sol`.
+2. Compile with Solidity **0.8.24** (optimizer on).
+3. In Deploy & Run: Environment = **Injected Provider** (MetaMask on **Base Sepolia**).
+4. Deploy **CardCollection** with:
+- baseURI: `ipfs://YOUR_CID/` (can change later with `setBaseURI`)
+- initialOwner: your wallet (or Safe)
+5. Deploy **VendingMachine** (TEST) with:
+- cardCollection: CardCollection address
+- initialOwner: your wallet (or Safe)
+6. Call **`setMinter(vendingAddress)`** on CardCollection.
+7. Deploy **TradingEscrow**.
+8. In your web app `web/.env.local` fill:
