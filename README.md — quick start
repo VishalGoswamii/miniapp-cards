@@ -1,0 +1,35 @@
+# Mini App: Daily Card Vending
+
+
+## Prereqs
+- Node 18+
+- pnpm or npm
+- Wallet funded on **Base mainnet** for prod (use **Base Sepolia** for testing)
+
+
+## Install
+pnpm i
+cd web && pnpm i
+
+
+## Deploy contracts (choose network)
+# Testnet
+# pnpm hardhat run scripts/deploy.ts --network baseSepolia
+# Mainnet
+# pnpm hardhat run scripts/deploy.ts --network base
+
+
+## Configure VRF (Base mainnet)
+- Create a VRF **subscription** on Base, note the sub ID
+- Fund the subscription with **LINK on Base** (token address in `.env`)
+- Set `VRF_COORDINATOR`, `VRF_KEYHASH` (30 gwei lane recommended), and `VRF_SUBSCRIPTION_ID`
+- Add your **VendingMachine** contract as a consumer for the subscription
+
+
+## Run web
+cd web && pnpm dev
+
+
+## Notes
+- Base Mainnet chainId: **8453**; explorer: basescan.org
+- Update `NEXT_PUBLIC_*` with deployed addresses.
