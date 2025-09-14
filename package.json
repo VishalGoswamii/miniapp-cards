@@ -1,17 +1,18 @@
 {
-  "name": "miniapp-cards",
+  "name": "miniapp-cards-web",
   "private": true,
-  "version": "0.1.0",
   "scripts": {
-    "compile": "hardhat compile",
-    "deploy:sepolia": "hardhat run scripts/deploy.ts --network baseSepolia",
-    "deploy:base": "hardhat run scripts/deploy.ts --network base"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
   },
-  "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-    "dotenv": "^16.4.5",
-    "hardhat": "^2.22.0",
-    "typescript": "^5.5.4",
-    "ts-node": "^10.9.2"
+  "dependencies": {
+    "next": "14.2.5",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "@farcaster/auth-kit": "^1.3.0",
+    "@base-org/minikit": "^0.2.0",
+    "viem": "^2.13.0",
+    "wagmi": "^2.10.0"
   }
 }
