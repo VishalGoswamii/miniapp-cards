@@ -9,6 +9,8 @@ import { ADDRS } from "@/lib/contracts";
 import DailyClaimCard from "@/components/DailyClaimCard";
 
 
+
+
 export default function Page() {
 return (
 <MiniKitProvider>
@@ -20,14 +22,20 @@ return (
 }
 
 
+
+
 function Home() {
 const { isAuthenticated, profile } = useProfile();
 const [lastClaim, setLastClaim] = useState<number | null>(null);
 const [txHash, setTxHash] = useState<string | null>(null);
 
 
+
+
 const fid = profile?.fid ? BigInt(profile.fid) : null;
 const pub = useMemo(() => createPublicClient({ chain: CHAIN, transport: http() }), []);
+
+
 
 
 useEffect(() => {
@@ -41,6 +49,8 @@ setLastClaim(Number(lc));
 }, [fid, pub]);
 
 
+
+
 async function claim() {
 if (!window.ethereum) throw new Error("No wallet. Open in Farcaster/Base App");
 if (!fid) throw new Error("Not signed in with Farcaster");
@@ -49,6 +59,8 @@ const [account] = await wallet.getAddresses();
 const hash = await wallet.writeContract({ address: ADDRS.VEND, abi: VENDING_ABI, functionName: "claimDaily", account, args: [fid] });
 setTxHash(hash);
 }
+
+
 
 
 return (
@@ -62,6 +74,8 @@ return (
 ) : (
 <DailyClaimCard lastClaim={lastClaim} onClaim={claim} txHash={txHash} fid={Number(fid)} />
 )}
+
+
 
 
 {txHash && (
