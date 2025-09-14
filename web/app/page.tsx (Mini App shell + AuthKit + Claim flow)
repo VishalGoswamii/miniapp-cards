@@ -1,83 +1,12 @@
-"use client";
-import { useEffect, useMemo, useState } from "react";
-import { SignInButton, useProfile, AuthKitProvider } from "@farcaster/auth-kit";
-import { MiniKitProvider } from "@base-org/minikit";
-import { createPublicClient, http, createWalletClient, custom } from "viem";
-import { CHAIN, EXPLORER_TX } from "@/lib/chains";
-import { VENDING_ABI } from "@/lib/abis";
-import { ADDRS } from "@/lib/contracts";
-import DailyClaimCard from "@/components/DailyClaimCard";
-
-
-
-
 export default function Page() {
 return (
-<MiniKitProvider>
-<AuthKitProvider>
-<Home />
-</AuthKitProvider>
-</MiniKitProvider>
+<main style={{padding: 24, fontFamily: 'ui-sans-serif, system-ui'}}>
+<h1>✅ Vercel is serving Next.js</h1>
+<p>Chain ID: <code>{process.env.NEXT_PUBLIC_CHAIN_ID ?? 'not set'}</code></p>
+<p>CardCollection: <code>{process.env.NEXT_PUBLIC_CARD_COLLECTION ?? 'not set'}</code></p>
+<p>VendingMachine: <code>{process.env.NEXT_PUBLIC_VENDING_MACHINE ?? 'not set'}</code></p>
+<p>TradingEscrow: <code>{process.env.NEXT_PUBLIC_TRADING_ESCROW ?? 'not set'}</code></p>
+<p style={{marginTop: 12}}>If you see values above, env vars are working. If not, add them in Vercel → Settings → Environment Variables and redeploy.</p>
+</main>
 );
-}
-
-
-
-
-function Home() {
-const { isAuthenticated, profile } = useProfile();
-const [lastClaim, setLastClaim] = useState<number | null>(null);
-const [txHash, setTxHash] = useState<string | null>(null);
-
-
-
-
-const fid = profile?.fid ? BigInt(profile.fid) : null;
-const pub = useMemo(() => createPublicClient({ chain: CHAIN, transport: http() }), []);
-
-
-
-
-useEffect(() => {
-(async () => {
-if (!fid || !ADDRS.VEND) return;
-try {
-const lc = await pub.readContract({ address: ADDRS.VEND, abi: VENDING_ABI, functionName: "lastClaim", args: [fid] });
-setLastClaim(Number(lc));
-} catch {}
-})();
-}, [fid, pub]);
-
-
-
-
-async function claim() {
-if (!window.ethereum) throw new Error("No wallet. Open in Farcaster/Base App");
-if (!fid) throw new Error("Not signed in with Farcaster");
-const wallet = createWalletClient({ chain: CHAIN, transport: custom(window.ethereum) });
-const [account] = await wallet.getAddresses();
-const hash = await wallet.writeContract({ address: ADDRS.VEND, abi: VENDING_ABI, functionName: "claimDaily", account, args: [fid] });
-setTxHash(hash);
-}
-
-
-
-
-return (
-<main className="min-h-dvh bg-black text-white flex items-center justify-center p-6">
-{!isAuthenticated ? (
-<div className="flex flex-col items-center gap-4">
-<h1 className="text-3xl font-bold">Daily Card Vending</h1>
-<p className="opacity-80">Sign in with Farcaster to get your free daily pull.</p>
-<SignInButton />
-</div>
-) : (
-<DailyClaimCard lastClaim={lastClaim} onClaim={claim} txHash={txHash} fid={Number(fid)} />
-)}
-
-
-
-
-{txHash && (
-<a className="fixed bottom-4 text-blue-400 underline" href={EXPLORER_TX(txHash)} target="_blank" rel="noreferrer">
 }
