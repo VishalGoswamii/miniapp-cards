@@ -26,7 +26,8 @@ ICardCollectionNV public immutable cards;
 uint64 public constant CLAIM_INTERVAL = 2 minutes; // <-- change to 24 hours for production
 
 
-mapping(uint256 fid => ClaimInfo) public claims;
+mapping(uint256 => ClaimInfo) public claims;
+
 
 
 // ---- Series & rarity ----
