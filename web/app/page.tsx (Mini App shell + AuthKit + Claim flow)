@@ -1,34 +1,8 @@
-import { AuthKitProvider, SignInButton, useProfile } from "@farcaster/auth-kit";
-import { createPublicClient, createWalletClient, custom, http } from "viem";
-import { baseSepolia } from "viem/chains";
-// ... your other imports
-
 export default function Page() {
   return (
-    <AuthKitProvider>
-      <Home />
-    </AuthKitProvider>
-  );
-}
-
-function Home() {
-  const { isAuthenticated, profile } = useProfile();
-  const pub = createPublicClient({ chain: baseSepolia, transport: http() });
-
-  async function claim() {
-    if (!window.ethereum) throw new Error("No wallet found");
-    if (!profile?.fid) throw new Error("Sign in with Farcaster first");
-    const wallet = createWalletClient({ chain: baseSepolia, transport: custom(window.ethereum) });
-    const [account] = await wallet.getAddresses();
-    // call your VendingMachine.claimDaily(fid) here with viem writeContract(...)
-  }
-
-  return !isAuthenticated ? (
-    <div style={{ padding: 24 }}>
-      <h1>Daily Card Vending</h1>
-      <SignInButton />
-    </div>
-  ) : (
-    <button onClick={claim}>Vend a Card</button>
+    <main style={{ padding: 24 }}>
+      <h1>✅ Vercel build OK</h1>
+      <p>Chain ID: <code>{process.env.NEXT_PUBLIC_CHAIN_ID ?? "not set"}</code></p>
+    </main>
   );
 }
