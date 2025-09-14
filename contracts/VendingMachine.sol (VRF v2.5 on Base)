@@ -1,0 +1,46 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.24;
+
+
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
+import {IVRFCoordinatorV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/interfaces/IVRFCoordinatorV2Plus.sol";
+
+
+interface ICardCollection {
+function mintTo(address to, uint256 id, uint256 amount) external;
+}
+
+
+/// @title VendingMachine
+/// @notice One free pull per FID per 24h. Uses Chainlink VRF v2.5 for randomness.
+contract VendingMachine is VRFConsumerBaseV2Plus, Ownable {
+struct RequestInfo { address user; uint256 fid; }
+
+
+ICardCollection public immutable cards;
+IVRFCoordinatorV2Plus public immutable coordinator;
+
+
+// ---- Daily gate ----
+mapping(uint256 fid => uint64 lastClaimAt) public lastClaim;
+uint64 public constant CLAIM_INTERVAL = 24 hours;
+
+
+// ---- VRF params (configure per network) ----
+uint256 public s_subscriptionId; // set in constructor or setter
+bytes32 public s_keyHash; // aka gas lane / keyHash
+uint32 public callbackGasLimit = 400_000;
+uint16 public requestConfirmations = 3;
+uint32 public numWords = 1;
+
+
+mapping(uint256 requestId => RequestInfo) public requests;
+
+
+event ClaimRequested(uint256 indexed requestId, address indexed user, uint256 indexed fid);
+event ClaimFulfilled(uint256 indexed requestId, address indexed user, uint256 cardId, uint256 rarityRoll);
+
+
+constructor(
+}
