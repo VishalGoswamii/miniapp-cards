@@ -3,44 +3,69 @@ pragma solidity ^0.8.24;
 
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
-import {IVRFCoordinatorV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/interfaces/IVRFCoordinatorV2Plus.sol";
 
 
-interface ICardCollection {
+interface ICardCollectionNV {
 function mintTo(address to, uint256 id, uint256 amount) external;
 }
 
 
-/// @title VendingMachine
-/// @notice One free pull per FID per 24h. Uses Chainlink VRF v2.5 for randomness.
-contract VendingMachine is VRFConsumerBaseV2Plus, Ownable {
-struct RequestInfo { address user; uint256 fid; }
+/// @title VendingMachine (Non‑VRF, TEST)
+/// @notice One free pull per FID per *2 minutes* (test mode). Uses on-chain pseudo‑randomness. Users pay their own gas.
+/// @dev For MAINNET, change CLAIM_INTERVAL back to 24 hours and (optionally) remove adminResetClaim.
+contract VendingMachine is Ownable {
+struct ClaimInfo { uint64 lastClaimAt; }
 
 
-ICardCollection public immutable cards;
-IVRFCoordinatorV2Plus public immutable coordinator;
+ICardCollectionNV public immutable cards;
 
 
-// ---- Daily gate ----
-mapping(uint256 fid => uint64 lastClaimAt) public lastClaim;
-uint64 public constant CLAIM_INTERVAL = 24 hours;
+// ---- Daily gate (TEST interval) ----
+// 🔁 TESTING ONLY: 2-minute cooldown so you can test quickly on Sepolia.
+// ✅ MAINNET: set this to 24 hours before deploying.
+uint64 public constant CLAIM_INTERVAL = 2 minutes; // <-- change to 24 hours for production
 
 
-// ---- VRF params (configure per network) ----
-uint256 public s_subscriptionId; // set in constructor or setter
-bytes32 public s_keyHash; // aka gas lane / keyHash
-uint32 public callbackGasLimit = 400_000;
-uint16 public requestConfirmations = 3;
-uint32 public numWords = 1;
+mapping(uint256 fid => ClaimInfo) public claims;
 
 
-mapping(uint256 requestId => RequestInfo) public requests;
+// ---- Series & rarity ----
+uint16[5] public rarityBps = [7000, 2200, 600, 180, 20]; // C,U,R,E,L out of 10_000
+uint8 public constant RARITY_COUNT = 5;
+uint8 public season = 1;
+uint8 public setId = 1;
 
 
-event ClaimRequested(uint256 indexed requestId, address indexed user, uint256 indexed fid);
-event ClaimFulfilled(uint256 indexed requestId, address indexed user, uint256 cardId, uint256 rarityRoll);
+// Optional entropy salt that owner can rotate to reduce manipulation
+bytes32 public entropySalt;
 
 
-constructor(
+event Claim(address indexed user, uint256 indexed fid, uint256 cardId, uint8 rarity);
+
+
+constructor(address _cardCollection, address initialOwner) Ownable(initialOwner) {
+cards = ICardCollectionNV(_cardCollection);
+entropySalt = keccak256(abi.encodePacked(block.timestamp, _cardCollection, initialOwner));
+}
+
+
+// --- Admin tweaks ---
+function setRarity(uint16 c, uint16 u, uint16 r, uint16 e, uint16 l) external onlyOwner { rarityBps = [c,u,r,e,l]; }
+function setSeries(uint8 _season, uint8 _set) external onlyOwner { season = _season; setId = _set; }
+function rotateEntropy(bytes32 newSalt) external onlyOwner { entropySalt = newSalt; }
+
+
+/// @notice TEST helper to fast-forward a user for reclaims. DO NOT ship to mainnet.
+function adminResetClaim(uint256 fid) external onlyOwner { delete claims[fid]; }
+
+
+// --- Claim ---
+function claimDaily(uint256 fid) external returns (uint256 cardId) {
+ClaimInfo memory info = claims[fid];
+require(info.lastClaimAt + CLAIM_INTERVAL <= block.timestamp, "Already claimed");
+claims[fid].lastClaimAt = uint64(block.timestamp);
+
+
+uint256 rand = uint256(keccak256(
+abi.encodePacked(block.prevrandao, block.timestamp, msg.sender, fid, entropySalt)
 }
