@@ -7,8 +7,6 @@ interface ICardCollectionNV {
     function mintTo(address to, uint256 id, uint256 amount) external;
 }
 
-/// @notice Non-VRF vending. Users pay their own gas. TEST cooldown = 2 minutes.
-/// For mainnet: set CLAIM_INTERVAL to 24 hours and (optionally) remove adminResetClaim.
 contract VendingMachine is Ownable {
     struct ClaimInfo { uint64 lastClaimAt; }
 
@@ -16,14 +14,13 @@ contract VendingMachine is Ownable {
     uint64 public constant CLAIM_INTERVAL = 2 minutes; // TEST ONLY
     mapping(uint256 => ClaimInfo) public claims;
 
-    // rarity (bps out of 10_000): C,U,R,E,L
+    // rarity bps out of 10_000: C,U,R,E,L
     uint16[5] public rarityBps;
     uint8 public constant RARITY_COUNT = 5;
     uint8 public season = 1;
     uint8 public setId = 1;
 
     bytes32 public entropySalt;
-
     event Claim(address indexed user, uint256 indexed fid, uint256 cardId, uint8 rarity);
 
     constructor(address _cardCollection, address initialOwner) Ownable(initialOwner) {
@@ -32,12 +29,11 @@ contract VendingMachine is Ownable {
         entropySalt = keccak256(abi.encodePacked(block.timestamp, _cardCollection, initialOwner));
     }
 
-    // admin
     function setRarity(uint16 c, uint16 u, uint16 r, uint16 e, uint16 l) external onlyOwner {
         rarityBps[0]=c; rarityBps[1]=u; rarityBps[2]=r; rarityBps[3]=e; rarityBps[4]=l;
     }
-    function setSeries(uint8 _season, uint8 _set) external onlyOwner { season = _season; setId = _set; }
-    function rotateEntropy(bytes32 s) external onlyOwner { entropySalt = s; }
+    function setSeries(uint8 _season, uint8 _set) external onlyOwner { season=_season; setId=_set; }
+    function rotateEntropy(bytes32 s) external onlyOwner { entropySalt=s; }
     function adminResetClaim(uint256 fid) external onlyOwner { delete claims[fid]; } // TEST helper
 
     function claimDaily(uint256 fid) external returns (uint256 cardId) {
@@ -53,6 +49,7 @@ contract VendingMachine is Ownable {
 
         cards.mintTo(msg.sender, cardId, 1);
         emit Claim(msg.sender, fid, cardId, rarity);
+        return cardId;
     }
 
     function lastClaim(uint256 fid) external view returns (uint64) {
