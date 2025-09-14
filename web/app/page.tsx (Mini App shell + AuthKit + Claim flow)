@@ -1,8 +1,0 @@
-export default function Page() {
-  return (
-    <main style={{ padding: 24 }}>
-      <h1>✅ Vercel build OK</h1>
-      <p>Chain ID: <code>{process.env.NEXT_PUBLIC_CHAIN_ID ?? "not set"}</code></p>
-    </main>
-  );
-}
