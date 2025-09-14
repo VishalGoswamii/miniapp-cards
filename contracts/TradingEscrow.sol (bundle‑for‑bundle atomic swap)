@@ -40,4 +40,21 @@ emit OfferCreated(id, msg.sender, token);
 function cancelOffer(uint256 id) external {
 Offer storage o = offers[id];
 require(o.active && o.maker == msg.sender, "bad");
+o.active = false;
+emit OfferCancelled(id);
+}
+
+
+function acceptOffer(uint256 id) external nonReentrant {
+Offer storage o = offers[id];
+require(o.active, "inactive");
+if (o.taker != address(0)) require(o.taker == msg.sender, "not taker");
+o.active = false;
+IERC1155 t = IERC1155(o.token);
+// Transfer from maker -> taker
+for (uint i=0;i<o.giving.length;i++) {
+t.safeTransferFrom(o.maker, msg.sender, o.giving[i].id, o.giving[i].amount, "");
+}
+// Transfer from taker -> maker
+for (uint i=0;i<o.wanting.length;i++) {
 }
