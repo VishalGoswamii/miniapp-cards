@@ -1,12 +1,5 @@
-export default function Page() {
-return (
-<main style={{padding: 24, fontFamily: 'ui-sans-serif, system-ui'}}>
-<h1>✅ Vercel is serving Next.js</h1>
-<p>Chain ID: <code>{process.env.NEXT_PUBLIC_CHAIN_ID ?? 'not set'}</code></p>
-<p>CardCollection: <code>{process.env.NEXT_PUBLIC_CARD_COLLECTION ?? 'not set'}</code></p>
-<p>VendingMachine: <code>{process.env.NEXT_PUBLIC_VENDING_MACHINE ?? 'not set'}</code></p>
-<p>TradingEscrow: <code>{process.env.NEXT_PUBLIC_TRADING_ESCROW ?? 'not set'}</code></p>
-<p style={{marginTop: 12}}>If you see values above, env vars are working. If not, add them in Vercel → Settings → Environment Variables and redeploy.</p>
-</main>
-);
-}
+import { MiniKitProvider } from "@base-org/minikit";
+// ...
+<MiniKitProvider>
+  <AuthKitProvider> ... </AuthKitProvider>
+</MiniKitProvider>
