@@ -1,0 +1,41 @@
+"use client";
+import { useEffect, useMemo, useState } from "react";
+import { SignInButton, useProfile, AuthKitProvider } from "@farcaster/auth-kit";
+import { MiniKitProvider } from "@base-org/minikit";
+import { createPublicClient, http, createWalletClient, custom } from "viem";
+import { CHAIN } from "@/lib/chains";
+import { VENDING_ABI } from "@/lib/abis";
+import { ADDRS } from "@/lib/contracts";
+import DailyClaimCard from "@/components/DailyClaimCard";
+
+
+export default function Page() {
+return (
+<MiniKitProvider>
+<AuthKitProvider>
+<Home />
+</AuthKitProvider>
+</MiniKitProvider>
+);
+}
+
+
+function Home() {
+const { isAuthenticated, profile } = useProfile();
+const [lastClaim, setLastClaim] = useState<number | null>(null);
+const [txHash, setTxHash] = useState<string | null>(null);
+
+
+const fid = profile?.fid ? BigInt(profile.fid) : null;
+const pub = useMemo(() => createPublicClient({ chain: CHAIN, transport: http() }), []);
+
+
+useEffect(() => {
+(async () => {
+if (!fid || !ADDRS.VEND) return;
+try {
+const lc = await pub.readContract({ address: ADDRS.VEND, abi: VENDING_ABI, functionName: "lastClaim", args: [fid] });
+setLastClaim(Number(lc));
+} catch {}
+})();
+}
