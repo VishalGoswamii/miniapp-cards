@@ -44,20 +44,19 @@ contract TradingEscrow is ReentrancyGuard {
 
         IERC1155 t = IERC1155(o.token);
         for (uint256 i=0;i<o.giving.length;i++) t.safeTransferFrom(o.maker, msg.sender, o.giving[i].id, o.giving[i].amount, "");
-        for (uint256 j=0;j<o.wanting.length;j++) t.safeTransferFrom(msg.sender, o.maker, o.wanting[j].id, o.wanting[j].amount, "");
+        for (uint256 j=0;j<wanting.length;j++) t.safeTransferFrom(msg.sender, o.maker, o.wanting[j].id, o.wanting[j].amount, "");
         emit OfferAccepted(id, msg.sender);
     }
 
-    // view helpers
     function getOfferMeta(uint256 id) external view returns (address maker, address token, address taker, bool active) {
         Offer storage o=_offers[id]; return (o.maker,o.token,o.taker,o.active);
     }
-    function getGiving(uint256 id) external view returns (Item[] memory items) {
-        Offer storage o=_offers[id]; items=new Item[](o.giving.length);
-        for(uint256 i=0;i<o.giving.length;i++) items[i]=o.giving[i];
+    function getGiving(uint256 id) external view returns (Item[] memory items) { 
+        Offer storage o=_offers[id]; items=new Item[](o.giving.length); 
+        for(uint256 i=0;i<o.giving.length;i++) items[i]=o.giving[i]; 
     }
-    function getWanting(uint256 id) external view returns (Item[] memory items) {
-        Offer storage o=_offers[id]; items=new Item[](o.wanting.length);
-        for(uint256 i=0;i<o.wanting.length;i++) items[i]=o.wanting[i];
+    function getWanting(uint256 id) external view returns (Item[] memory items) { 
+        Offer storage o=_offers[id]; items=new Item[](o.wanting.length); 
+        for(uint256 i=0;i<o.wanting.length;i++) items[i]=o.wanting[i]; 
     }
 }
