@@ -1,90 +1,53 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/v5.0.2/contracts/access/Ownable.sol";
 
 interface ICardCollectionNV {
     function mintTo(address to, uint256 id, uint256 amount) external;
 }
 
-/// @title VendingMachine (Non-VRF, TEST)
-//  One free pull per FID per *2 minutes* on Sepolia for fast testing.
-//  For MAINNET: set CLAIM_INTERVAL to 24 hours and (optionally) remove adminResetClaim.
+/// @notice Non-VRF vending. Users pay their own gas. TEST cooldown = 2 minutes.
+/// For mainnet: set CLAIM_INTERVAL to 24 hours and (optionally) remove adminResetClaim.
 contract VendingMachine is Ownable {
-    struct ClaimInfo {
-        uint64 lastClaimAt;
-    }
+    struct ClaimInfo { uint64 lastClaimAt; }
 
     ICardCollectionNV public immutable cards;
-
-    // 🔁 TEST ONLY: short cooldown for faster testing. (MAINNET: 24 hours)
-    uint64 public constant CLAIM_INTERVAL = 2 minutes;
-
-    // FID => last claim info
+    uint64 public constant CLAIM_INTERVAL = 2 minutes; // TEST ONLY
     mapping(uint256 => ClaimInfo) public claims;
 
-    // ---- Series & rarity ----
-    // Common, Uncommon, Rare, Epic, Legendary (basis points out of 10_000)
+    // rarity (bps out of 10_000): C,U,R,E,L
     uint16[5] public rarityBps;
     uint8 public constant RARITY_COUNT = 5;
     uint8 public season = 1;
     uint8 public setId = 1;
 
-    // Optional entropy salt to reduce manipulation
     bytes32 public entropySalt;
 
     event Claim(address indexed user, uint256 indexed fid, uint256 cardId, uint8 rarity);
 
     constructor(address _cardCollection, address initialOwner) Ownable(initialOwner) {
         cards = ICardCollectionNV(_cardCollection);
-        // default rarity: 70%, 22%, 6%, 1.8%, 0.2%
-        rarityBps[0] = 7000;
-        rarityBps[1] = 2200;
-        rarityBps[2] = 600;
-        rarityBps[3] = 180;
-        rarityBps[4] = 20;
-
+        rarityBps[0]=7000; rarityBps[1]=2200; rarityBps[2]=600; rarityBps[3]=180; rarityBps[4]=20;
         entropySalt = keccak256(abi.encodePacked(block.timestamp, _cardCollection, initialOwner));
     }
 
-    // --- Admin tweaks ---
+    // admin
     function setRarity(uint16 c, uint16 u, uint16 r, uint16 e, uint16 l) external onlyOwner {
-        rarityBps[0] = c;
-        rarityBps[1] = u;
-        rarityBps[2] = r;
-        rarityBps[3] = e;
-        rarityBps[4] = l;
+        rarityBps[0]=c; rarityBps[1]=u; rarityBps[2]=r; rarityBps[3]=e; rarityBps[4]=l;
     }
+    function setSeries(uint8 _season, uint8 _set) external onlyOwner { season = _season; setId = _set; }
+    function rotateEntropy(bytes32 s) external onlyOwner { entropySalt = s; }
+    function adminResetClaim(uint256 fid) external onlyOwner { delete claims[fid]; } // TEST helper
 
-    function setSeries(uint8 _season, uint8 _set) external onlyOwner {
-        season = _season;
-        setId = _set;
-    }
-
-    function rotateEntropy(bytes32 newSalt) external onlyOwner {
-        entropySalt = newSalt;
-    }
-
-    /// @notice TEST helper to fast-forward a user for reclaims. DO NOT ship to mainnet.
-    function adminResetClaim(uint256 fid) external onlyOwner {
-        delete claims[fid];
-    }
-
-    // --- Claim ---
     function claimDaily(uint256 fid) external returns (uint256 cardId) {
         ClaimInfo memory info = claims[fid];
         require(info.lastClaimAt + CLAIM_INTERVAL <= block.timestamp, "Already claimed");
-
-        // update first to close the window immediately
         claims[fid].lastClaimAt = uint64(block.timestamp);
 
-        // pseudo-randomness (OK for casual loot; not cryptographically secure)
-        uint256 rand = uint256(
-            keccak256(
-                abi.encodePacked(block.prevrandao, block.timestamp, msg.sender, fid, entropySalt)
-            )
-        );
-
+        uint256 rand = uint256(keccak256(abi.encodePacked(
+            block.prevrandao, block.timestamp, msg.sender, fid, entropySalt
+        )));
         uint8 rarity = _drawRarity(rand);
         cardId = _cardIdFrom(rarity, rand >> 32);
 
@@ -97,19 +60,14 @@ contract VendingMachine is Ownable {
     }
 
     function _drawRarity(uint256 rand) internal view returns (uint8) {
-        uint256 roll = rand % 10_000;
-        uint256 acc = 0;
-        for (uint8 i = 0; i < RARITY_COUNT; i++) {
-            acc += rarityBps[i];
-            if (roll < acc) return i;
-        }
-        return RARITY_COUNT - 1; // fallback
+        uint256 roll = rand % 10_000; uint256 acc;
+        for (uint8 i=0;i<RARITY_COUNT;i++){ acc+=rarityBps[i]; if(roll<acc) return i; }
+        return RARITY_COUNT - 1;
     }
 
     function _cardIdFrom(uint8 rarity, uint256 rand) internal view returns (uint256) {
-        uint16 space = rarity == 0 ? 2000 : rarity == 1 ? 800 : rarity == 2 ? 200 : rarity == 3 ? 60 : 20;
+        uint16 space = rarity==0?2000:rarity==1?800:rarity==2?200:rarity==3?60:20;
         uint16 idx = uint16(rand % space);
-        // pack into a simple 32-bit-style layout for demo purposes
-        return (uint256(season) << 24) | (uint256(setId) << 16) | (uint256(rarity) << 12) | idx;
+        return (uint256(season)<<24)|(uint256(setId)<<16)|(uint256(rarity)<<12)|idx;
     }
 }
