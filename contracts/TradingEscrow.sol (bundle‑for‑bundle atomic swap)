@@ -1,25 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/v5.0.2/contracts/token/ERC1155/IERC1155.sol";
+import "https://raw.githubusercontent.com/OpenZeppelin/openzeppelin-contracts/v5.0.2/contracts/utils/ReentrancyGuard.sol";
 
-/// @title TradingEscrow
-/// @notice Simple bundle-for-bundle escrow for ERC-1155. Both parties must setApprovalForAll to this contract.
 contract TradingEscrow is ReentrancyGuard {
-    struct Item {
-        uint256 id;
-        uint256 amount;
-    }
-
-    struct Offer {
-        address maker;      // creator of the offer
-        address token;      // ERC-1155 collection
-        Item[] giving;      // items maker will send
-        address taker;      // optional; 0x0 means anyone
-        Item[] wanting;     // items expected from taker
-        bool active;        // true until accepted or cancelled
-    }
+    struct Item { uint256 id; uint256 amount; }
+    struct Offer { address maker; address token; Item[] giving; address taker; Item[] wanting; bool active; }
 
     uint256 public nextOfferId;
     mapping(uint256 => Offer) private _offers;
@@ -28,84 +15,49 @@ contract TradingEscrow is ReentrancyGuard {
     event OfferCancelled(uint256 indexed id);
     event OfferAccepted(uint256 indexed id, address indexed taker);
 
-    /// @notice Create an offer. Caller must later keep approval set for this contract.
-    function createOffer(
-        address token,
-        Item[] calldata giving,
-        Item[] calldata wanting,
-        address taker
-    ) external returns (uint256 id) {
-        require(token != address(0), "token=0");
-        require(giving.length > 0, "giving empty");
-
+    function createOffer(address token, Item[] calldata giving, Item[] calldata wanting, address taker)
+        external returns (uint256 id)
+    {
+        require(token!=address(0), "token=0");
+        require(giving.length>0, "giving empty");
         id = nextOfferId++;
-        Offer storage o = _offers[id];
-        o.maker = msg.sender;
-        o.token = token;
-        o.taker = taker;
-        o.active = true;
-
-        // copy calldata arrays into storage
-        for (uint256 i = 0; i < giving.length; i++) {
-            o.giving.push(Item({ id: giving[i].id, amount: giving[i].amount }));
-        }
-        for (uint256 j = 0; j < wanting.length; j++) {
-            o.wanting.push(Item({ id: wanting[j].id, amount: wanting[j].amount }));
-        }
-
+        Offer storage o=_offers[id];
+        o.maker=msg.sender; o.token=token; o.taker=taker; o.active=true;
+        for (uint256 i=0;i<giving.length;i++) o.giving.push(Item({id: giving[i].id, amount: giving[i].amount}));
+        for (uint256 j=0;j<wanting.length;j++) o.wanting.push(Item({id: wanting[j].id, amount: wanting[j].amount}));
         emit OfferCreated(id, msg.sender, token);
     }
 
-    /// @notice Cancel your active offer.
     function cancelOffer(uint256 id) external {
-        Offer storage o = _offers[id];
-        require(o.active, "inactive");
-        require(o.maker == msg.sender, "not maker");
-        o.active = false;
+        Offer storage o=_offers[id];
+        require(o.active,"inactive");
+        require(o.maker==msg.sender,"not maker");
+        o.active=false;
         emit OfferCancelled(id);
     }
 
-    /// @notice Accept an offer; transfers items both ways atomically.
     function acceptOffer(uint256 id) external nonReentrant {
-        Offer storage o = _offers[id];
-        require(o.active, "inactive");
-        if (o.taker != address(0)) require(o.taker == msg.sender, "not taker");
-        o.active = false;
+        Offer storage o=_offers[id];
+        require(o.active,"inactive");
+        if(o.taker!=address(0)) require(o.taker==msg.sender,"not taker");
+        o.active=false;
 
         IERC1155 t = IERC1155(o.token);
-
-        // maker -> taker
-        for (uint256 i = 0; i < o.giving.length; i++) {
-            t.safeTransferFrom(o.maker, msg.sender, o.giving[i].id, o.giving[i].amount, "");
-        }
-        // taker -> maker
-        for (uint256 j = 0; j < o.wanting.length; j++) {
-            t.safeTransferFrom(msg.sender, o.maker, o.wanting[j].id, o.wanting[j].amount, "");
-        }
-
+        for (uint256 i=0;i<o.giving.length;i++) t.safeTransferFrom(o.maker, msg.sender, o.giving[i].id, o.giving[i].amount, "");
+        for (uint256 j=0;j<o.wanting.length;j++) t.safeTransferFrom(msg.sender, o.maker, o.wanting[j].id, o.wanting[j].amount, "");
         emit OfferAccepted(id, msg.sender);
     }
 
-    // ------- Optional helpers for read-only UIs -------
-
-    function getOfferMeta(uint256 id)
-        external
-        view
-        returns (address maker, address token, address taker, bool active)
-    {
-        Offer storage o = _offers[id];
-        return (o.maker, o.token, o.taker, o.active);
+    // view helpers
+    function getOfferMeta(uint256 id) external view returns (address maker, address token, address taker, bool active) {
+        Offer storage o=_offers[id]; return (o.maker,o.token,o.taker,o.active);
     }
-
     function getGiving(uint256 id) external view returns (Item[] memory items) {
-        Offer storage o = _offers[id];
-        items = new Item[](o.giving.length);
-        for (uint256 i = 0; i < o.giving.length; i++) items[i] = o.giving[i];
+        Offer storage o=_offers[id]; items=new Item[](o.giving.length);
+        for(uint256 i=0;i<o.giving.length;i++) items[i]=o.giving[i];
     }
-
     function getWanting(uint256 id) external view returns (Item[] memory items) {
-        Offer storage o = _offers[id];
-        items = new Item[](o.wanting.length);
-        for (uint256 i = 0; i < o.wanting.length; i++) items[i] = o.wanting[i];
+        Offer storage o=_offers[id]; items=new Item[](o.wanting.length);
+        for(uint256 i=0;i<o.wanting.length;i++) items[i]=o.wanting[i];
     }
 }
