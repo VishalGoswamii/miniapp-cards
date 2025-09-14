@@ -1,0 +1,2 @@
+"use client";
+export default function TradeOffers() { return <div>TODO: create/accept offers</div>; }
