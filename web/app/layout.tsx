@@ -1,8 +1,8 @@
-import './globals.css'; // Assuming you have a globals.css in your app folder
+import './globals.css'; // This line expects globals.css in the same directory
 
 export const metadata = {
-  title: 'Mini App Cards',
-  description: 'Your Farcaster Mini App',
+  title: 'Miniapp Cards', // You can adjust this title
+  description: 'Your Farcaster Mini App', // You can adjust this description
 };
 
 export default function RootLayout({
