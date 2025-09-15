@@ -4,7 +4,7 @@ import { AuthKitProvider, SignInButton, useProfile } from "@farcaster/auth-kit";
 import { baseSepolia } from "viem/chains";
 import { createPublicClient, createWalletClient, custom, http } from "viem";
 import { useMemo, useState } from "react";
-import { vendingAbi } from "../../lib/abi"; // <--- Add an extra '../' here
+import { vendingAbi } from "../../lib/abi";
 import { env } from "../lib/env";
 
 export default function Page() {
