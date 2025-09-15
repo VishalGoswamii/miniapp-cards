@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"] // Keep this if it exists
+    }
+    // ===========================================
+    // !!! ADD OR MODIFY THIS PART !!!
+    // ===========================================
+    ,"baseUrl": ".", // Add or ensure this exists for paths to work
+    "paths": {
+      "@/lib/*": ["./lib/*"], // Add this line
+      "@/*": ["./*"] // Ensure this existing line is also here
+    }
+    // ===========================================
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
